@@ -1,0 +1,102 @@
+#HUGE MEMORY BREAKER
+'''
+# Audio conversion
+from subprocess import Popen, PIPE
+import time
+
+mp3files = [os.path.join(root, name)
+             for root, dirs, files in os.walk('C:/Users/Henrique/Desktop/DotaMediaFiles')
+             for name in files
+             if name.endswith((".mp3", ".mp3"))]
+
+FFMPEG_BIN = "C:/Users/Henrique/ffmpeg.exe"
+for i in mp3files[:40000]:
+    o = 'C:/Users/Henrique/Desktop/DotaMediaFiles\\{}\\{}.wav'.format(
+            os.path.splitext(i)[0].split('/')[4].split('\\')[1], 
+            os.path.splitext(i)[0].split('/')[4].split('\\')[2])
+    if o in wavfiles:
+        pass
+    else:
+        Popen([FFMPEG_BIN,'-i', i, o])
+'''
+
+
+'''''''''''''''''''''''''''''''''''''''''''''''''''
+Mixed-class speaker recognition using GMMs
+'''''''''''''''''''''''''''''''''''''''''''''''''''
+
+''' GET WAV LIST '''
+wavfiles = [os.path.join(root, name)
+             for root, dirs, files in os.walk('C:/Users/Henrique/Desktop/DotaMediaFiles')
+             for name in files
+             if name.endswith((".wav", ".wav"))]
+print('Total files: ',len(wavfiles))
+
+
+''''''''''' Feature Extraction '''''''''''
+
+''' SPECTRAL FEATURES '''
+import librosa
+import json
+j=0
+with open('speechfeatures.jl', mode='w', encoding='utf-8') as feedsjson:
+    feeds=[]
+    for i in wavfiles:
+        try:
+            y, sr = librosa.load(i)
+            new = librosa.feature.mfcc(y, sr,n_mfcc=13)
+            new_delta = librosa.feature.delta(mfcc, axis=0, order=1)
+            data={"id":j,
+              "label": os.path.splitext(i)[0].split('/')[4].split('\\')[1],
+              "mfcc": new.tolist()}
+            feeds.append(data)
+            j+=1
+        except:
+            pass    
+    json.dump(feeds, feedsjson)
+    
+'''PROSODIC(TEMPORAL) FEATURES '''
+
+for i in wavfiles:
+    try:
+        y, sr = librosa.load(i)
+        pitches, magnitudes = librosa.piptrack(y=y, sr=sr)
+        zero = librosa.feature.zero_crossing_rate(y)
+        tempo = librosa.feature.tempogram(y=y, sr=sr)
+import soundfile as sf
+from scipy import signal
+import amfm_decompy.pYAAPT as pyaapt
+import amfm_decompy.pyQHM as pyqhm
+import amfm_decompy.basic_tools as basic
+
+'''SINUSOIDAL FEATURES '''
+
+for i in wavfiles:
+    try:
+        # FOURIER TRANSFORM
+        # fft = numpy.fft.fft()
+       
+        # AM-FM DECOMPOSITION
+        window_duration = 0.015
+        nharm_max = 25
+        signal = basic.SignalObj(i)
+        window = pyqhm.SampleWindow(window_duration, signal.fs)
+        pitch = pyaapt.yaapt(signal)
+        signal.set_nharm(pitch.values, nharm_max)
+        QHM = pyqhm.qhm(signal, pitch, window, N_iter = 3, phase_tech = 'freq')
+        #aQHM = pyqhm.aqhm(signal, QHM, pitch, window, 0.001, N_iter = 3, N_runs = 2)
+        #eaQHM = pyqhm.eaqhm(signal, aQHM, pitch, window, 0.001, N_iter=3, N_runs=1)
+        
+'''''''''''''''''''''''''''''''''
+Getting Vx for NNET, SVM, etc 
+'''''''''''''''''''''''''''''''''
+
+sample_rate, X = scipy.io.wavfile.read("path/to/audio_file")
+ceps, mspec, spec = mfcc(X)
+np.save("cache_file_name", ceps) # cache results so that ML becomes fast
+
+X = []
+ceps = np.load("cache_file_name")
+num_ceps = len(ceps)
+X.append(np.mean(ceps[int(num_ceps / 10):int(num_ceps * 9 / 10)], axis=0))
+Vx = np.array(X)
