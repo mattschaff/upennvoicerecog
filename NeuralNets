@@ -1,0 +1,41 @@
+def create_model0(activation_fn='relu',d1=0.1,d2=0.1):
+    model = tf.keras.models.Sequential()
+    model.add(tf.keras.layers.Dense(
+        units = 1690, input_dim=1690, kernel_initializer='uniform', activation=activation_fn))
+    model.add(tf.keras.layers.Dropout(d1))
+    model.add(tf.keras.layers.Dense(
+        units = 132, kernel_initializer='uniform', activation='softmax'))
+    model.compile(
+        loss = 'sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+    return model
+
+import numpy as np
+from sklearn import datasets
+from sklearn import metrics
+from sklearn import model_selection
+from sklearn import preprocessing
+from sklearn.utils import shuffle
+import tensorflow as tf
+import numpy as np
+
+labels = np.load('C:/Users/Henrique/Desktop/DotaMediaLabels.npy')
+mfccs = np.load('C:/Users/Henrique/Desktop/DotaMediaMFCCS.npy')
+new = mfccs.reshape(mfccs.shape[0],mfccs.shape[1]*mfccs.shape[2])
+vmax,vmin = new.max(),new.min()
+new = (new - vmin)/(vmax - vmin)
+
+le = preprocessing.LabelEncoder()
+le.fit(labels)
+numlabels= le.transform(labels)
+
+threeClassIndexes = np.where( (numlabels == 2) |(numlabels == 1) | (numlabels == 0))[0]
+threeX = new[threeClassIndexes,:]
+threeY = numlabels[threeClassIndexes]
+threeX, threeY = shuffle(threeX, threeY)
+
+x_train, x_test, y_train, y_test = model_selection.train_test_split(
+    threeX, threeY, test_size=0.1, shuffle=True)
+model = create_model0(activation_fn=tf.nn.tanh)
+history0 = model.fit(
+    x_train, y_train, validation_data=(x_test,y_test),
+    epochs=500, batch_size=30, verbose=1)
