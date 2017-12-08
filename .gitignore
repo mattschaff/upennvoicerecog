@@ -1,0 +1,4 @@
+standardfeatures/*
+standardfeatures*
+*.pyc
+.DS_Store
